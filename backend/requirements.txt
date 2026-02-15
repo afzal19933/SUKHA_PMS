@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+sqlmodel
+python-jose
+passlib[argon2]
+argon2-cffi
