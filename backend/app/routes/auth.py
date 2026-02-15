@@ -1,5 +1,10 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlmodel import Session, select
+
 from app.core.security import hash_password
+from app.core.database import get_session
+from app.models.user import User
+from app.models.role import Role
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -7,29 +12,35 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 def test_hash():
     sample_password = "sukha123"
     hashed = hash_password(sample_password)
-    return {
-        "original": sample_password,
-        "hashed": hashed
-    }
-from app.models.user import User
-from app.models.role import Role
+    return {"original": sample_password, "hashed": hashed}
+
 
 @router.get("/create-test-user")
-def create_test_user():
-    # Simulated user creation (no database yet)
+def create_test_user(session: Session = Depends(get_session)):
     username = "manager1"
     password = "sukha123"
-    role = Role.manager
 
-    hashed = hash_password(password)
+    # Check if user already exists
+    statement = select(User).where(User.username == username)
+    existing_user = session.exec(statement).first()
 
-    user = {
-        "username": username,
-        "hashed_password": hashed,
-        "role": role
-    }
+    if existing_user:
+        return {"message": "User already exists", "username": username}
+
+    user = User(
+        username=username,
+        hashed_password=hash_password(password),
+        full_name="Manager Test",
+        role=Role.manager
+    )
+
+    session.add(user)
+    session.commit()
+    session.refresh(user)
 
     return {
-        "message": "Test user created (simulation)",
-        "user": user
+        "message": "Manager user created successfully",
+        "user_id": user.id,
+        "username": user.username,
+        "role": user.role
     }
