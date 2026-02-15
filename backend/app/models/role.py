@@ -1,5 +1,7 @@
 from enum import Enum
 
 class Role(str, Enum):
+    owner = "owner"
     manager = "manager"
-    staff = "staff"
+    reception = "reception"
+    housekeeping = "housekeeping"
